@@ -142,7 +142,7 @@ func (m *Uint64) Get(k uint64) (v uint64, ok bool) {
 	return 0, false
 }
 
-// try_set 尝试从组中的一个位置获取指定键值对.
+// try_get 尝试从组中的一个位置获取指定键值对.
 func (m *Uint64) try_get(k, index uint64, group *[16]uint64) (v uint64, ok bool) {
 	ki := index * 2
 	kp := group[ki]
