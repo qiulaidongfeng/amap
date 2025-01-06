@@ -26,6 +26,14 @@ func BenchmarkSetAndGet(b *testing.B) {
 	}
 }
 
+func BenchmarkGoSetAndGet(b *testing.B) {
+	m := make(map[uint64]uint64, 1)
+	for i := uint64(0); i < uint64(b.N); i++ {
+		m[i] = 2
+		_ = m[i]
+	}
+}
+
 func FuzzSetAndGet(f *testing.F) {
 	f.Fuzz(func(t *testing.T, count uint64) {
 		testSetAndGet(t, count)
