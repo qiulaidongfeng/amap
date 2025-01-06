@@ -59,3 +59,33 @@ func testSetAndGet(t *testing.T, count uint64) {
 func TestFail1(t *testing.T) {
 	testSetAndGet(t, 32)
 }
+
+func TestDel(t *testing.T) {
+	m := NewUint64(testalloc, 1)
+	m.Set(1, 2)
+	m.Del(1)
+	v, ok := m.Get(1)
+	if ok {
+		t.Fatal("got true, want false")
+	}
+	if v != 0 {
+		t.Fatalf("got %d, want 0", v)
+	}
+}
+
+func TestClear(t *testing.T) {
+	m := NewUint64(testalloc, 1)
+	const count = 8192
+	for i := uint64(1); i < count; i++ {
+		m.Set(i, i)
+	}
+	m.Clear()
+	got := 0
+	m.Range(func(k, v uint64) bool {
+		got++
+		return true
+	})
+	if got != 0 {
+		t.Fatalf("got %d, want 0", got)
+	}
+}

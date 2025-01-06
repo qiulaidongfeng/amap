@@ -100,7 +100,7 @@ func (m *Uint64) Range(yield func(k, v uint64) bool) {
 	//遍历所有组
 	for i := range m.kv {
 		//遍历一个组
-		for k := 0; k < 16; k += 2 {
+		for k := 0; k < groupsize; k += 2 {
 			if m.kv[i][k] != 0 && !yield(m.kv[i][k], m.kv[i][k+1]) { //如果有键值对且调用者要求停止
 				return
 			}
@@ -150,4 +150,51 @@ func (m *Uint64) try_get(k, index uint64, group *[16]uint64) (v uint64, ok bool)
 		return group[ki+1], true
 	}
 	return 0, false
+}
+
+// Del 类似 delete(m,k) 对于go原生map.
+// k不能等于0.
+func (m *Uint64) Del(k uint64) {
+	if k == 0 {
+		panic("键不能为0")
+	}
+	//首先确定要查找的那个组
+	group_hash := k % uint64(len(m.kv))
+	group := &m.kv[group_hash]
+	group_intrtnal_hash := k % 8
+	//尝试从组中的一个位置删除
+	if m.try_del(k, group_intrtnal_hash, group) {
+		return
+	}
+	//尝试从组中的其他位置删除
+	for i := uint64(0); i < 8; i++ {
+		if m.try_del(k, i, group) {
+			return
+		}
+	}
+}
+
+// try_del 尝试从组中的一个位置删除指定键值对.
+func (m *Uint64) try_del(k, index uint64, group *[16]uint64) (ok bool) {
+	ki := index * 2
+	kp := group[ki]
+	if kp == k { //如果指定位置保护指定的键值对
+		group[ki] = 0
+		//Note:没有必要清理值，因为只要将键恢复到零值，对于哈希表的所有操作，这个位置就相当于无值的。
+		return true
+	}
+	return false
+}
+
+// Clear 类似 clear(m) 对于go原生map.
+// 像原生map那样，不收缩底层内存
+func (m *Uint64) Clear() {
+	//遍历所有组
+	for i := range m.kv {
+		//遍历一个组
+		for k := 0; k < groupsize; k += 2 {
+			//Note:没有必要清理值，因为只要将键恢复到零值，对于哈希表的所有操作，这个位置就相当于无值的。
+			m.kv[i][k] = 0
+		}
+	}
 }
