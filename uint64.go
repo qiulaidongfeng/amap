@@ -11,6 +11,9 @@ type Uint64 struct {
 // groupsize 是自定义哈希表中一个组的键加值的数量.
 const groupsize = 16
 
+// keycap 是一个组中键的容量
+const keycap = groupsize / 2
+
 // NewUint64 创建一个 [Uint64].
 //   - alloc 分配指定大小的内存，可以配合arena使用.
 //   - mincap 指定最小的键加值容量.
@@ -66,12 +69,12 @@ func (m *Uint64) set(k, v uint64) bool {
 	group_hash := k % uint64(len(m.kv))
 	group := &m.kv[group_hash]
 	//尝试插入组中的一个位置
-	group_intrtnal_hash := k % 8
-	if m.try_set(k, v, group_intrtnal_hash, group) {
+	group_internal_hash := k % keycap
+	if m.try_set(k, v, group_internal_hash, group) {
 		return true
 	}
 	//尝试插入组中的其他位置
-	for i := uint64(0); i < 8; i++ {
+	for i := uint64(0); i < keycap; i++ {
 		if m.try_set(k, v, i, group) {
 			return true
 		}
@@ -80,7 +83,7 @@ func (m *Uint64) set(k, v uint64) bool {
 }
 
 // try_set 尝试将键值对插入组中的一个位置.
-func (m *Uint64) try_set(k, v, index uint64, group *[16]uint64) bool {
+func (m *Uint64) try_set(k, v, index uint64, group *[groupsize]uint64) bool {
 	ki := index * 2
 	kp := &group[ki]
 	//如果指定位置没有键值对
@@ -128,13 +131,13 @@ func (m *Uint64) Get(k uint64) (v uint64, ok bool) {
 	//首先确定要查找的那个组
 	group_hash := k % uint64(len(m.kv))
 	group := &m.kv[group_hash]
-	group_intrtnal_hash := k % 8
+	group_internal_hash := k % keycap
 	//尝试查找组中的一个位置
-	if v, ok := m.try_get(k, group_intrtnal_hash, group); ok {
+	if v, ok := m.try_get(k, group_internal_hash, group); ok {
 		return v, ok
 	}
 	//尝试查找组中的其他位置
-	for i := uint64(0); i < 8; i++ {
+	for i := uint64(0); i < keycap; i++ {
 		if v, ok := m.try_get(k, i, group); ok {
 			return v, ok
 		}
@@ -143,7 +146,7 @@ func (m *Uint64) Get(k uint64) (v uint64, ok bool) {
 }
 
 // try_get 尝试从组中的一个位置获取指定键值对.
-func (m *Uint64) try_get(k, index uint64, group *[16]uint64) (v uint64, ok bool) {
+func (m *Uint64) try_get(k, index uint64, group *[groupsize]uint64) (v uint64, ok bool) {
 	ki := index * 2
 	kp := group[ki]
 	if kp == k { //如果指定位置保护指定的键值对
@@ -161,13 +164,13 @@ func (m *Uint64) Del(k uint64) {
 	//首先确定要查找的那个组
 	group_hash := k % uint64(len(m.kv))
 	group := &m.kv[group_hash]
-	group_intrtnal_hash := k % 8
+	group_internal_hash := k % keycap
 	//尝试从组中的一个位置删除
-	if m.try_del(k, group_intrtnal_hash, group) {
+	if m.try_del(k, group_internal_hash, group) {
 		return
 	}
 	//尝试从组中的其他位置删除
-	for i := uint64(0); i < 8; i++ {
+	for i := uint64(0); i < keycap; i++ {
 		if m.try_del(k, i, group) {
 			return
 		}
@@ -175,7 +178,7 @@ func (m *Uint64) Del(k uint64) {
 }
 
 // try_del 尝试从组中的一个位置删除指定键值对.
-func (m *Uint64) try_del(k, index uint64, group *[16]uint64) (ok bool) {
+func (m *Uint64) try_del(k, index uint64, group *[groupsize]uint64) (ok bool) {
 	ki := index * 2
 	kp := group[ki]
 	if kp == k { //如果指定位置保护指定的键值对
@@ -187,7 +190,7 @@ func (m *Uint64) try_del(k, index uint64, group *[16]uint64) (ok bool) {
 }
 
 // Clear 类似 clear(m) 对于go原生map.
-// 像原生map那样，不收缩底层内存
+// 像原生map那样，不收缩底层内存.
 func (m *Uint64) Clear() {
 	//遍历所有组
 	for i := range m.kv {
