@@ -149,7 +149,7 @@ func (m *Uint64) Get(k uint64) (v uint64, ok bool) {
 func (m *Uint64) try_get(k, index uint64, group *[groupsize]uint64) (v uint64, ok bool) {
 	ki := index * 2
 	kp := group[ki]
-	if kp == k { //如果指定位置保护指定的键值对
+	if kp == k { //如果指定位置包含指定的键值对
 		return group[ki+1], true
 	}
 	return 0, false
@@ -181,7 +181,7 @@ func (m *Uint64) Del(k uint64) {
 func (m *Uint64) try_del(k, index uint64, group *[groupsize]uint64) (ok bool) {
 	ki := index * 2
 	kp := group[ki]
-	if kp == k { //如果指定位置保护指定的键值对
+	if kp == k { //如果指定位置包含指定的键值对
 		group[ki] = 0
 		//Note:没有必要清理值，因为只要将键恢复到零值，对于哈希表的所有操作，这个位置就相当于无值的。
 		return true
