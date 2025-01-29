@@ -21,12 +21,7 @@ func NewUint64(alloc func(int) []uint64, mincap int) *Uint64 {
 	ret := &Uint64{
 		alloc: alloc,
 	}
-	//确保mincap是groupsize的倍数
-	if mincap == 0 {
-		mincap = groupsize
-	} else if mincap%groupsize != 0 {
-		mincap += groupsize - (mincap % groupsize)
-	}
+	mincap = align(mincap)
 	//分配内存
 	mem := alloc(mincap)
 	//转换为n个键值对组

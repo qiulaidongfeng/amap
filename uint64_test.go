@@ -27,11 +27,20 @@ func BenchmarkSetAndGet(b *testing.B) {
 }
 
 func BenchmarkGoSetAndGet(b *testing.B) {
-	m := make(map[uint64]uint64, 1)
-	for i := uint64(0); i < uint64(b.N); i++ {
-		m[i] = 2
-		_ = m[i]
-	}
+	b.Run("uint", func(b *testing.B) {
+		m := make(map[uint64]uint64, 1)
+		for i := uint64(0); i < uint64(b.N); i++ {
+			m[i] = 2
+			_ = m[i]
+		}
+	})
+	b.Run("string", func(b *testing.B) {
+		m := make(map[string]string, 1)
+		for i := 0; i < b.N; i++ {
+			m["1"] = "2"
+			_ = m["2"]
+		}
+	})
 }
 
 func FuzzSetAndGet(f *testing.F) {
